@@ -11,6 +11,7 @@ export const preferredRegion = ["iad1"]; // example
 
 const DEFAULT_FPS = Number(process.env.EXTRACT_FPS ?? 1);
 const DEFAULT_MAX_FRAMES = Number(process.env.EXTRACT_MAX_FRAMES ?? 10);
+const FRAME_CONCURRENCY = Number(process.env.FRAME_CONCURRENCY ?? 3);
 
 function isVideo(mime: string) {
   return mime.startsWith("video/");
@@ -42,11 +43,15 @@ export async function POST(req: NextRequest) {
       const frames = await extractFramesFromVideo(bytes, { fps: DEFAULT_FPS, maxFrames: DEFAULT_MAX_FRAMES });
 
       // Per-frame parallel tasks for LLM models only (OCR可考虑后续优化处理多帧合并)
-      const perFrame = await Promise.all(
-        frames.map(async (frame) => {
-          const mime = "image/jpeg";
-          const base64 = Buffer.from(frame).toString("base64");
-          return Promise.allSettled([
+      // Limit frame-level concurrency
+      const queue: Promise<PromiseSettledResult<any>[][]>[] = [];
+      for (let i = 0; i < frames.length; i += FRAME_CONCURRENCY) {
+        const batch = frames.slice(i, i + FRAME_CONCURRENCY);
+        queue.push(Promise.all(
+          batch.map(async (frame) => {
+            const mime = "image/jpeg";
+            const base64 = Buffer.from(frame).toString("base64");
+            return Promise.allSettled([
             (async () => {
               const { structured, rawText } = await callGeminiProForImageBytes(frame, mime, PRODUCT_PROMPT);
               return { key: MODEL_KEYS.GEMINI_PRO, structured, rawText };
@@ -67,7 +72,10 @@ export async function POST(req: NextRequest) {
             })(),
           ]);
         })
-      );
+        ));
+      }
+      const perFrameBatches = await Promise.all(queue);
+      const perFrame: PromiseSettledResult<any>[][] = perFrameBatches.flat();
 
       // Aggregate across frames by model
       const models: ProcessResponse["models"] = {};

@@ -8,6 +8,8 @@ export type GLMClientOptions = {
 
 const DEFAULT_BASE_URL = "https://open.bigmodel.cn/api/paas/v4";
 
+async function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+
 export async function callGLM4VForImageBase64(
   imageBase64: string,
   mimeType: string,
@@ -18,11 +20,7 @@ export async function callGLM4VForImageBase64(
   const baseURL = options?.baseURL ?? DEFAULT_BASE_URL;
   if (!apiKey) throw new Error("Missing ZHIPUAI_API_KEY");
 
-  // OpenAI-compatible chat completions endpoint
   const url = `${baseURL}/chat/completions`;
-
-  // Many OpenAI-compatible providers accept content with image_url or base64
-  // Here we use base64 data URI to be safe.
   const dataUri = `data:${mimeType};base64,${imageBase64}`;
 
   const body = {
@@ -38,17 +36,26 @@ export async function callGLM4VForImageBase64(
     ],
   };
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`GLM-4V http ${res.status}`);
-  const data = await res.json();
-  const text: string = data?.choices?.[0]?.message?.content ?? "";
-  return { text };
+  let delay = 500;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text: string = data?.choices?.[0]?.message?.content ?? "";
+      return { text };
+    }
+    if (res.status === 429 || res.status === 503) {
+      if (attempt < 3) { await sleep(delay); delay *= 2; continue; }
+    }
+    throw new Error(`GLM-4V http ${res.status}`);
+  }
+  throw new Error("GLM-4V request failed after retries");
 }
 
