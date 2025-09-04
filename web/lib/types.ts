@@ -43,7 +43,6 @@ export const MODEL_KEYS = {
   GEMINI_FLASH: "gemini_flash",
   GLM_4V: "glm_4v",
   BAIDU_OCR: "baidu_ocr",
-  ALIYUN_OCR: "aliyun_ocr",
 } as const;
 export type ModelKey = typeof MODEL_KEYS[keyof typeof MODEL_KEYS];
 

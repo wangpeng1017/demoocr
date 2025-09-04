@@ -4,7 +4,6 @@ import { callGeminiProForImageBytes, PRODUCT_PROMPT } from "@/lib/models/gemini"
 import { callGeminiFlashForImageBytes } from "@/lib/models/geminiFlash";
 import { callGLM4VForImageBase64 } from "@/lib/models/glm";
 import { callBaiduOCR } from "@/lib/models/baidu";
-import { callAliyunOCRPlaceholder } from "@/lib/models/aliyun";
 import { dedupe } from "@/lib/extract";
 
 export const runtime = "nodejs";
@@ -66,10 +65,6 @@ export async function POST(req: NextRequest) {
               const { rawText } = await callBaiduOCR(frame, mime);
               return { key: MODEL_KEYS.BAIDU_OCR, structured: [], rawText };
             })(),
-            (async () => {
-              const { rawText } = await callAliyunOCRPlaceholder(frame, mime);
-              return { key: MODEL_KEYS.ALIYUN_OCR, structured: [], rawText };
-            })(),
           ]);
         })
       );
@@ -83,7 +78,6 @@ export async function POST(req: NextRequest) {
         [MODEL_KEYS.GEMINI_FLASH]: { name: "Gemini 2.5 Flash", type: "llm" },
         [MODEL_KEYS.GLM_4V]: { name: "GLM-4V", type: "llm" },
         [MODEL_KEYS.BAIDU_OCR]: { name: "百度 OCR", type: "ocr" },
-        [MODEL_KEYS.ALIYUN_OCR]: { name: "阿里云 OCR", type: "ocr" },
       };
 
       for (const frameResults of perFrame) {
@@ -120,7 +114,7 @@ export async function POST(req: NextRequest) {
 
   const bytes = await fileToBytes(file);
 
-  // Parallel calls: 5 models
+  // Parallel calls: 4 models
   const tasks = {
     [MODEL_KEYS.GEMINI_PRO]: (async () => {
       const start = Date.now();
@@ -163,16 +157,6 @@ export async function POST(req: NextRequest) {
         return { name: "百度 OCR", type: "ocr", status: "fulfilled", durationMs, rawText } satisfies ModelResultOCR;
       } catch (e: any) {
         return { name: "百度 OCR", type: "ocr", status: "rejected", durationMs: Date.now() - start, error: e?.message ?? String(e) } satisfies ModelResultOCR;
-      }
-    })(),
-    [MODEL_KEYS.ALIYUN_OCR]: (async () => {
-      const start = Date.now();
-      try {
-        const { rawText } = await callAliyunOCRPlaceholder(bytes, mimeType);
-        const durationMs = Date.now() - start;
-        return { name: "阿里云 OCR", type: "ocr", status: "fulfilled", durationMs, rawText } satisfies ModelResultOCR;
-      } catch (e: any) {
-        return { name: "阿里云 OCR", type: "ocr", status: "rejected", durationMs: Date.now() - start, error: e?.message ?? String(e) } satisfies ModelResultOCR;
       }
     })(),
   } as const;

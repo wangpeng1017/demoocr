@@ -44,12 +44,11 @@ function HomeClient() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
         <ModelCard title="Gemini 2.5 Pro" result={data?.models?.gemini_pro} />
         <ModelCard title="Gemini 2.5 Flash" result={data?.models?.gemini_flash} />
         <ModelCard title="GLM-4V" result={data?.models?.glm_4v} />
         <ModelCard title="百度 OCR" result={data?.models?.baidu_ocr} />
-        <ModelCard title="阿里云 OCR" result={data?.models?.aliyun_ocr} />
       </div>
 
       {data?.note && (
