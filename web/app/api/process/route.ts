@@ -48,17 +48,17 @@ export async function POST(req: NextRequest) {
         queue.push(Promise.all(
           batch.map(async (frame) => {
             const mime = "image/jpeg";
-            const base64 = Buffer.from(frame).toString("base64");
             return Promise.allSettled([
-            (async () => {
-              const { structured, rawText } = await callGeminiProForImageBytes(frame, mime, PRODUCT_PROMPT);
-              return { key: MODEL_KEYS.GEMINI_PRO, structured, rawText };
-            })(),
-            (async () => {
-              const { rawText } = await callBaiduOCR(frame, mime);
-              return { key: MODEL_KEYS.BAIDU_OCR, structured: [], rawText };
-            })(),
-          ]);
+              (async () => {
+                const { structured, rawText } = await callGeminiProForImageBytes(frame, mime, PRODUCT_PROMPT);
+                return { key: MODEL_KEYS.GEMINI_PRO, structured, rawText };
+              })(),
+              (async () => {
+                const { rawText } = await callBaiduOCR(frame, mime);
+                return { key: MODEL_KEYS.BAIDU_OCR, structured: [], rawText };
+              })(),
+            ]);
+          })
         ));
       }
       const perFrameBatches = await Promise.all(queue);
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
 
   const bytes = await fileToBytes(file);
 
-  // Parallel calls: 4 models
+  // Parallel calls: 2 models
   const tasks = {
     [MODEL_KEYS.GEMINI_PRO]: (async () => {
       const start = Date.now();
