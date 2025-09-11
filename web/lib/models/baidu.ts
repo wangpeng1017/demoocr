@@ -1,5 +1,3 @@
-import type { ModelResultOCR } from "../types";
-
 // Minimal Baidu OCR via REST requires access_token. In production, cache token.
 async function fetchAccessToken(apiKey: string, secretKey: string) {
   const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${encodeURIComponent(
@@ -12,8 +10,7 @@ async function fetchAccessToken(apiKey: string, secretKey: string) {
   return data.access_token;
 }
 
-export async function callBaiduOCR(imageBytes: Uint8Array, mimeType: string) {
-  const APP_ID = process.env.BAIDU_OCR_APP_ID; // not used in REST token but kept for completeness
+export async function callBaiduOCR(imageBytes: Uint8Array) {
   const API_KEY = process.env.BAIDU_OCR_API_KEY;
   const SECRET_KEY = process.env.BAIDU_OCR_SECRET_KEY;
   if (!API_KEY || !SECRET_KEY) throw new Error("Missing Baidu OCR credentials");

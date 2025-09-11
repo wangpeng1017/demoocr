@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
                 return { key: MODEL_KEYS.GEMINI_PRO, structured, rawText };
               })(),
               (async () => {
-                const { rawText } = await callBaiduOCR(frame, mime);
+                const { rawText } = await callBaiduOCR(frame);
                 return { key: MODEL_KEYS.BAIDU_OCR, structured: [], rawText };
               })(),
             ]);
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
     [MODEL_KEYS.BAIDU_OCR]: (async () => {
       const start = Date.now();
       try {
-        const { rawText } = await callBaiduOCR(bytes, mimeType);
+        const { rawText } = await callBaiduOCR(bytes);
         const durationMs = Date.now() - start;
         return { name: "百度 OCR", type: "ocr", status: "fulfilled", durationMs, rawText } satisfies ModelResultOCR;
       } catch (e: any) {
