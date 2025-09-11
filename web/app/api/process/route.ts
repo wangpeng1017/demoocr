@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MODEL_KEYS, type ModelResultLLM, type ModelResultOCR, type ProcessResponse, type ProductItem } from "@/lib/types";
 import { callGeminiProForImageBytes, PRODUCT_PROMPT } from "@/lib/models/gemini";
-import { callGeminiFlashForImageBytes } from "@/lib/models/geminiFlash";
-import { callGLM4VForImageBase64 } from "@/lib/models/glm";
 import { callBaiduOCR } from "@/lib/models/baidu";
 import { dedupe } from "@/lib/extract";
 
@@ -57,21 +55,10 @@ export async function POST(req: NextRequest) {
               return { key: MODEL_KEYS.GEMINI_PRO, structured, rawText };
             })(),
             (async () => {
-              const { structured, rawText } = await callGeminiFlashForImageBytes(frame, mime);
-              return { key: MODEL_KEYS.GEMINI_FLASH, structured, rawText };
-            })(),
-            (async () => {
-              const { text } = await callGLM4VForImageBase64(base64, mime, PRODUCT_PROMPT);
-              const { parseProductsJSON } = await import("@/lib/extract");
-              const structured = parseProductsJSON(text);
-              return { key: MODEL_KEYS.GLM_4V, structured, rawText: text };
-            })(),
-            (async () => {
               const { rawText } = await callBaiduOCR(frame, mime);
               return { key: MODEL_KEYS.BAIDU_OCR, structured: [], rawText };
             })(),
           ]);
-        })
         ));
       }
       const perFrameBatches = await Promise.all(queue);
@@ -83,8 +70,6 @@ export async function POST(req: NextRequest) {
 
       const modelMeta: Record<string, { name: string; type: "llm" | "ocr" }> = {
         [MODEL_KEYS.GEMINI_PRO]: { name: "Gemini 2.5 Pro", type: "llm" },
-        [MODEL_KEYS.GEMINI_FLASH]: { name: "Gemini 2.5 Flash", type: "llm" },
-        [MODEL_KEYS.GLM_4V]: { name: "GLM-4V", type: "llm" },
         [MODEL_KEYS.BAIDU_OCR]: { name: "百度 OCR", type: "ocr" },
       };
 
@@ -132,29 +117,6 @@ export async function POST(req: NextRequest) {
         return { name: "Gemini 2.5 Pro", type: "llm", status: "fulfilled", durationMs, structured, rawText } satisfies ModelResultLLM;
       } catch (e: any) {
         return { name: "Gemini 2.5 Pro", type: "llm", status: "rejected", durationMs: Date.now() - start, error: e?.message ?? String(e) } satisfies ModelResultLLM;
-      }
-    })(),
-    [MODEL_KEYS.GEMINI_FLASH]: (async () => {
-      const start = Date.now();
-      try {
-        const { structured, rawText } = await callGeminiFlashForImageBytes(bytes, mimeType);
-        const durationMs = Date.now() - start;
-        return { name: "Gemini 2.5 Flash", type: "llm", status: "fulfilled", durationMs, structured, rawText } satisfies ModelResultLLM;
-      } catch (e: any) {
-        return { name: "Gemini 2.5 Flash", type: "llm", status: "rejected", durationMs: Date.now() - start, error: e?.message ?? String(e) } satisfies ModelResultLLM;
-      }
-    })(),
-    [MODEL_KEYS.GLM_4V]: (async () => {
-      const start = Date.now();
-      try {
-        const base64 = Buffer.from(bytes).toString("base64");
-        const { text } = await callGLM4VForImageBase64(base64, mimeType, PRODUCT_PROMPT);
-        const durationMs = Date.now() - start;
-        const { parseProductsJSON } = await import("@/lib/extract");
-        const structured = parseProductsJSON(text);
-        return { name: "GLM-4V", type: "llm", status: "fulfilled", durationMs, structured, rawText: text } satisfies ModelResultLLM;
-      } catch (e: any) {
-        return { name: "GLM-4V", type: "llm", status: "rejected", durationMs: Date.now() - start, error: e?.message ?? String(e) } satisfies ModelResultLLM;
       }
     })(),
     [MODEL_KEYS.BAIDU_OCR]: (async () => {

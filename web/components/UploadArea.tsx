@@ -30,19 +30,28 @@ export function UploadArea({ onResult }: { onResult: (data: any) => void }) {
       <CardHeader>
         <CardTitle>上传图片或视频</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <input
-          type="file"
-          accept="image/*,video/*"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
+      <CardContent className="space-y-4">
+        <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 bg-blue-50 hover:bg-blue-100 transition-colors">
+          <label className="cursor-pointer block text-center">
+            <input
+              type="file"
+              accept="image/*,video/*"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="hidden"
+            />
+            <div className="space-y-2">
+              <div className="text-blue-600 font-medium">📁 选择文件</div>
+              <div className="text-sm text-gray-600">支持图片和视频格式</div>
+            </div>
+          </label>
+        </div>
         <div className="flex items-center gap-3">
-          <Button onClick={handleUpload} disabled={!file || loading}>
+          <Button onClick={handleUpload} disabled={!file || loading} className="bg-blue-600 hover:bg-blue-700">
             {loading ? "处理中..." : "开始处理"}
           </Button>
-          {file && <span className="text-sm text-muted-foreground">{file.name}</span>}
+          {file && <span className="text-sm text-blue-600 font-medium">{file.name}</span>}
         </div>
-        {error && <div className="text-sm text-red-600">{error}</div>}
+        {error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
       </CardContent>
     </Card>
   );

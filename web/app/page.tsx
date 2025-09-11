@@ -3,6 +3,7 @@ import { UploadArea } from "@/components/UploadArea";
 import { ModelCard } from "@/components/ModelCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
+import Image from "next/image";
 
 export default function Home() {
   return <HomeClient />;
@@ -13,7 +14,10 @@ function HomeClient() {
 
   return (
     <div className="container mx-auto max-w-6xl py-8 space-y-6">
-      <h1 className="text-2xl font-bold">商品标签多模型结构化信息提取</h1>
+      <div className="flex items-center gap-4 mb-8">
+        <Image src="/logo.svg" alt="平台Logo" width={48} height={48} />
+        <h1 className="text-3xl font-bold text-blue-600">商品标签多模型结构化信息提取</h1>
+      </div>
       <UploadArea onResult={setData} />
 
       <Card>
@@ -44,10 +48,8 @@ function HomeClient() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ModelCard title="Gemini 2.5 Pro" result={data?.models?.gemini_pro} />
-        <ModelCard title="Gemini 2.5 Flash" result={data?.models?.gemini_flash} />
-        <ModelCard title="GLM-4V" result={data?.models?.glm_4v} />
         <ModelCard title="百度 OCR" result={data?.models?.baidu_ocr} />
       </div>
 
